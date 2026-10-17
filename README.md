@@ -8,7 +8,9 @@ An end-to-end data analytics project: cleaning an Amazon product dataset with **
 
 **Live dashboard:** [Amazon Performance Business Analytics Dashboard](https://datastudio.google.com/reporting/a46afda5-93d0-470a-bda1-e8d1b101184a)
 
-![Dashboard preview](dashboard/dashboard_preview.png)
+![Dashboard preview](Visualization%20Dashboard/Amazon%20Dashboard.png)
+
+ <p align="center"><em>Figure 1 - Visualization Dashboard of Amazon Business Analytics</em></p>
 
 ---
 
@@ -16,13 +18,13 @@ An end-to-end data analytics project: cleaning an Amazon product dataset with **
 - [Business Problem](#business-problem)
 - [Dataset](#dataset)
 - [Tools](#tools)
+- [How to Reproduce](#how-to-reproduce)
 - [Repository Structure](#repository-structure)
 - [Data Cleansing Workflow (BigQuery)](#data-cleansing-workflow-bigquery)
 - [Dashboard (Looker Studio)](#dashboard-looker-studio)
 - [Key Insights](#key-insights)
 - [Recommendations](#recommendations)
 - [Limitations](#limitations)
-- [How to Reproduce](#how-to-reproduce)
 - [Author](#author)
 
 ---
@@ -58,70 +60,60 @@ The Amazon Sales dataset contains product listings with these fields:
 - **Looker Studio**: interactive dashboard
 - **Microsoft PowerPoint**: analysis presentation
 
+## How to Reproduce
+
+1. Upload the CSV to BigQuery as `amazon_first_raw_data` (schema auto-detect, skip 1 header row).
+2. Run the scripts in `sql/` in numerical order, replacing `project.dataset` with your own project and dataset names.
+3. Create the `viz_produk` view.
+4. In Looker Studio, create a report with BigQuery as the data source and select `viz_produk`.
+5. Build the charts and filters listed in the dashboard table above.
+
 ## Repository Structure
 
 ```
 amazon-performance-business-analytics/
 ├── README.md
-├── sql/                         # BigQuery scripts, run in order
-│   ├── 01_data_profiling.sql
-│   ├── 02_remove_duplicates.sql
-│   ├── 03_fix_rating.sql
-│   ├── 04_split_category.sql
-│   ├── 05_standardize_discount.sql
-│   ├── 06_split_user_and_review.sql
-│   ├── 07_text_and_link_checks.sql
-│   ├── 08_final_table_and_validation.sql
-│   └── 09_dashboard_view.sql
-├── dashboard/
-│   ├── dashboard_preview.png
+├── BigQuery Syntax/                         # BigQuery scripts, run in order
+│   ├── 1.Check_the_first_raw_data.sql
+│   ├── 2.Cleaning_duplicate_data.sql
+│   ├── 3.Improving_rating_format_and_category_splits.sql
+│   ├── 4.Improving_Discount_Percentage_Format.sql
+│   ├── 5.Difference between user, product, and review.sql
+│   └── 6.Create_Amazon_Final_Data.sql
+├── Visualization Dashboard/
+│   ├── Dashboard_Amazon.png
 │   └── Dashboard-Amazon_Performance_Business_Analytics.pdf
-└── presentation/
-    └── Amazon_Performance_Full_Analysis.pptx
+└── Data Storytelling/
+│   ├── Amazon_cleansing_data_storytelling.pdf
+    └── PPT_Amazon_Performance_Full_Analysis.pdf
 ```
 
 ## Data Cleansing Workflow (BigQuery)
 
+<details>
+   <summary>Click the BigQuery Interface preview</summary>
+    
+![BigQuery Interface Preview](BigQuery%20Syntax/BigQuery%20Amazon.png)
+
+ <p align="center"><em>Figure 2 - BigQuery Interface for Amazon Business Analytics</em></p>
+   </details>
+
 Each step creates a new table from the previous one, so the raw table is never modified and every step can be repeated.
 
-`amazon_raw_table` → `amazon_clean_data` → `_v2` → `_v3` → `_v4` → `_v5` → `amazon_clean_final` → `viz_produk` (view)
+`amazon_first_raw_data` → `amazon_clean_data` → `amazon_clean_data_v2` → `amazon_category` → `amazon_discount_percentage` → `amazon_user` → `amazon_final_data` → `viz_produk` (view)
 
 | # | Script | Issue found | Technique | Result |
 |---|---|---|---|---|
-| 1 | `01_data_profiling.sql` | Unknown data quality | `COUNT`, `COUNTIF`, `SAFE_CAST`, `TO_JSON_STRING` | 1,465 rows, 1,351 unique `product_id`, 2 empty `rating_count`, 1 invalid rating |
-| 2 | `02_remove_duplicates.sql` | Repeated `product_id` (identical except `img_link` and `product_link`) | `ROW_NUMBER() OVER (PARTITION BY ...)` | 114 duplicate rows removed |
-| 3 | `03_fix_rating.sql` | One rating stored as `\|` | `SAFE_CAST(... AS FLOAT64)` | Invalid value became `NULL`; range 2 to 5 |
-| 4 | `04_split_category.sql` | Several category levels in one cell | `SPLIT`, `SAFE_OFFSET` | `main_category`, `sub_category`, `sub_category_2` |
-| 5 | `05_standardize_discount.sql` | `discount_percentage` stored as a fraction (0 to 1) | `ROUND(x * 100)` | 0 to 100 scale; 0 mismatches against prices |
-| 6 | `06_split_user_and_review.sql` | Several users and reviews in one cell | `SPLIT`, `UNNEST ... WITH OFFSET` | 10,598 rows; `product_id` + `review_id` is unique |
-| 7 | `07_text_and_link_checks.sql` | Possible empty text or broken links | `TRIM`, `STARTS_WITH` | 0 issues found |
-| 8 | `08_final_table_and_validation.sql` | Final checks | `INFORMATION_SCHEMA`, `UNION ALL` | `amazon_clean_final`, data types verified |
-| 9 | `09_dashboard_view.sql` | Final table has one row per review | `GROUP BY` + `ANY_VALUE` | 1,351 rows, one per product |
+| 1 | `1.Check_the_first_raw_data.sql` | Unknown data quality | `COUNT`, `COUNTIF`, `SAFE_CAST`, `TO_JSON_STRING` | 1,465 rows, 1,351 unique `product_id`, 2 empty `rating_count`, 1 invalid rating |
+| 2 | `2.Cleaning_duplicate_data.sql` | Repeated `product_id` (identical except `img_link` and `product_link`) | `ROW_NUMBER() OVER (PARTITION BY ...)` | 114 duplicate rows removed |
+| 3 | `3.Improving_rating_format_and_category_splits.sql` | One rating stored as `\|` | `SAFE_CAST(... AS FLOAT64)` | Invalid value became `NULL`; range 2 to 5 |
+| 4 | `3.Improving_rating_format_and_category_splits.sql` | Several category levels in one cell | `SPLIT`, `SAFE_OFFSET` | `main_category`, `sub_category`, `sub_category_2` |
+| 5 | `4.Improving_Discount_Percentage_Format.sql` | `discount_percentage` stored as a fraction (0 to 1) | `ROUND(x * 100)` | 0 to 100 scale; 0 mismatches against prices |
+| 6 | `5.Difference between user, product, and review.sql` | Several users and reviews in one cell | `SPLIT`, `UNNEST ... WITH OFFSET` | 10,598 rows; `product_id` + `review_id` is unique |
+| 7 | `6.Create_Amazon_Final_Data.sql` | Possible empty text or broken links | `TRIM`, `STARTS_WITH` | 0 issues found |
+| 8 | `6.Create_Amazon_Final_Data.sql` | Final checks | `INFORMATION_SCHEMA`, `UNION ALL` | `amazon_clean_final`, data types verified |
 
-**Example snippets**
-
-```sql
--- Keep one row per product_id
-CREATE OR REPLACE TABLE `project.dataset.amazon_clean_data` AS
-SELECT * EXCEPT(rn) FROM (
-  SELECT *, ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY product_link) AS rn
-  FROM `project.dataset.amazon_raw_table`
-)
-WHERE rn = 1;
-
--- Turn an invalid rating into NULL
-SELECT * REPLACE (SAFE_CAST(rating AS FLOAT64) AS rating)
-FROM `project.dataset.amazon_clean_data`;
-
--- Split two aligned multi-value columns into one row per review
-SELECT * EXCEPT(user_id, review_id), TRIM(uid) AS user_id, TRIM(rid) AS review_id
-FROM `project.dataset.amazon_clean_data_v4`,
-UNNEST(SPLIT(user_id, ',')) AS uid WITH OFFSET AS pos1,
-UNNEST(SPLIT(review_id, ',')) AS rid WITH OFFSET AS pos2
-WHERE pos1 = pos2;
-```
-
-**Why a separate view for the dashboard?** `amazon_clean_final` has one row per review, so product-level values (price, discount, rating) repeat. Averaging them directly would overweight products with many reviews. `viz_produk` returns one row per product, which keeps the dashboard metrics consistent.
+**Why a separate view for the dashboard?** `amazon_final_data` has one row per review, so product-level values (price, discount, rating) repeat. Averaging them directly would overweight products with many reviews. `viz_produk` returns one row per product, which keeps the dashboard metrics consistent.
 
 ## Dashboard (Looker Studio)
 
@@ -152,7 +144,7 @@ WHERE pos1 = pos2;
 - **Popularity is concentrated.** The top 10 most-rated products are all Electronics and come from only three product families: Amazon Basics, boAt, and Redmi.
 - **Highest scores, smallest samples.** The best-rated categories are among the smallest, so their averages are less reliable.
 
-The full reading of every parameter is in the [presentation](presentation/Amazon_Performance_Full_Analysis.pptx).
+The full reading of every parameter is in the [data storytelling or presentation](Data%20Storytelling/PPT_Amazon_Performance_Full_Analysis.pdf).
 
 ## Recommendations
 
@@ -165,17 +157,8 @@ The full reading of every parameter is in the [presentation](presentation/Amazon
 ## Limitations
 
 - Variants of the same product share almost identical rating counts, so totals and the top 10 may double count.
-- Six small categories hold only 2.7% of products, so their averages are indicative only.
 - The dataset is a snapshot with no time or sales data, so the dashboard shows association, not cause and effect.
 - `user_name`, `review_title`, and `review_content` were not split per review, and 9 products lost some reviews during the user/review split.
-
-## How to Reproduce
-
-1. Upload the CSV to BigQuery as `amazon_raw_table` (schema auto-detect, skip 1 header row).
-2. Run the scripts in `sql/` in numerical order, replacing `project.dataset` with your own project and dataset names.
-3. Create the `viz_produk` view with `09_dashboard_view.sql`.
-4. In Looker Studio, create a report with BigQuery as the data source and select `viz_produk`.
-5. Build the charts and filters listed in the dashboard table above.
 
 ## Author
 
