@@ -1,6 +1,6 @@
 # Amazon Performance Business Analytics
 
-![BigQuery](https://github.com/sitimuyassaroh/Amazon_Performance_Business_Analytics/BigQuery%20Syntax/BigQuery%20Amazon.png)
+![BigQuery](https://img.shields.io/badge/Google_BigQuery-SQL-4285F4?logo=googlebigquery&logoColor=white)
 ![Looker Studio](https://img.shields.io/badge/Looker_Studio-Dashboard-4285F4?logo=looker&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
